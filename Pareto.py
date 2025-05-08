@@ -19,7 +19,7 @@ if st.session_state.started:
     if st.button("Finish"):
         try:
             # Step 1: Parse inputs
-            data = list(map(int, user_input.split(",")))
+            data = list(map(float, user_input.split(",")))  # Use float() instead of int()
             interval = int(num_intervals)
 
             largest = max(data)
@@ -32,7 +32,7 @@ if st.session_state.started:
                 frequency_dict[num] = frequency_dict.get(num, 0) + 1
 
             # Step 2: Tabulated frequency
-            numbers = [number for number, _ in sorted(frequency_dict.items())]
+            numbers = [round(number, 2) for number, _ in sorted(frequency_dict.items())]  # Round to 2 decimal places
             freq_values = [freq for _, freq in sorted(frequency_dict.items())]
 
             # Create the DataFrame for the frequency table
@@ -51,7 +51,7 @@ if st.session_state.started:
             start = smallest
             while start < largest:
                 end = start + interval_length
-                intervals.append(f"{start} < x <= {end}")
+                intervals.append(f"{round(start, 2)} < x <= {round(end, 2)}")  # Round intervals to 2 decimal places
                 count = sum(start < num <= end for num in data)
                 frequencies.append(count)
                 relative_frequencies.append(round(count / interval_length, 4))
