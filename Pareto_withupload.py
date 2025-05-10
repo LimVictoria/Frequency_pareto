@@ -3,8 +3,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import pandas as pd
+import string
 
 st.title("Frequency & Pareto Chart Generator")
+
+def get_excel_column_name(n):
+    """Convert numeric index to Excel-style column name."""
+    name = ''
+    while n >= 0:
+        name = chr(n % 26 + ord('A')) + name
+        n = n // 26 - 1
+    return name
 
 if "started" not in st.session_state:
     st.session_state.started = False
@@ -13,38 +22,53 @@ if st.button("Start"):
     st.session_state.started = True
 
 if st.session_state.started:
-    uploaded_file = st.file_uploader("Upload Excel file or enter numbers manually:", type=["xlsx"])
     data = []
+    input_method = st.radio("How do you want to provide your data?", ["Upload Excel file", "Enter manually"])
 
-    if uploaded_file:
-        df = pd.read_excel(uploaded_file, header=0)  # Read with headers
-        shape = df.shape
+    if input_method == "Upload Excel file":
+        uploaded_file = st.file_uploader("Upload Excel file:", type=["xlsx"])
 
-        if shape[1] == 1:  # One column
-            column = df.columns[0]
-            data = df[column].dropna().tolist()
-        elif shape[0] == 1:  # One row
-            data = df.iloc[0].dropna().tolist()
-        else:
-            selected_column = st.selectbox("Multiple columns detected. Select the column to use:", df.columns)
-            data = df[selected_column].dropna().tolist()
+        if uploaded_file:
+            df = pd.read_excel(uploaded_file, header=0)
 
-        data = [float(x) for x in data if isinstance(x, (int, float))]  # Clean non-numeric
-        user_input = ",".join(map(str, data))  # For re-use in manual logic
+            # Drop fully empty columns
+            df_cleaned = df.dropna(axis=1, how='all')
 
-    else:
+            if df_cleaned.shape[1] == 0:
+                st.error("❌ The uploaded file doesn't contain any non-empty columns.")
+            else:
+                # Identify non-empty columns and map index to Excel-style name
+                column_mapping = {}
+                for i, col in enumerate(df.columns):
+                    if not df[col].dropna().empty:
+                        excel_col = get_excel_column_name(i)
+                        column_mapping[excel_col] = col
+
+                if len(column_mapping) == 1:
+                    selected_key = list(column_mapping.keys())[0]
+                    st.info(f"Only one column with values found: Column {selected_key}")
+                else:
+                    selected_key = st.selectbox("Select which column to use:", list(column_mapping.keys()))
+
+                selected_column = column_mapping[selected_key]
+                data = df[selected_column].dropna().tolist()
+
+                # Filter only numeric values
+                data = [float(x) for x in data if isinstance(x, (int, float))]
+
+    elif input_method == "Enter manually":
         user_input = st.text_input("Enter numbers (comma-separated):", "")
+        if user_input:
+            try:
+                data = list(map(float, user_input.split(",")))
+            except:
+                st.error("❌ Please enter valid comma-separated numbers.")
 
     num_intervals = st.text_input("Enter number of intervals:", "")
 
-    if st.button("Finish"):
+    if st.button("Finish") and data and num_intervals.isdigit():
         try:
-            # Parse input if not from file
-            if not uploaded_file:
-                data = list(map(float, user_input.split(",")))
-
             interval = int(num_intervals)
-
             largest = max(data)
             smallest = min(data)
             Diff = largest - smallest
@@ -96,21 +120,18 @@ if st.session_state.started:
             st.subheader("Pareto (Cumulative Frequency Table)")
             st.table(pareto_df)
 
-            sorted_intervals = intervals
-            sorted_frequencies = frequencies
-
-            cumulative_sum = np.cumsum(sorted_frequencies)
+            cumulative_sum = np.cumsum(frequencies)
             cumulative_percentages = (cumulative_sum / cumulative_sum[-1]) * 100
 
             fig, ax1 = plt.subplots(figsize=(7, 5))
-            ax1.bar(sorted_intervals, sorted_frequencies, color='skyblue', alpha=0.7)
+            ax1.bar(intervals, frequencies, color='skyblue', alpha=0.7)
             ax1.set_xlabel('Intervals')
             ax1.set_ylabel('Frequency', color='blue')
             ax1.tick_params(axis='y', labelcolor='blue')
-            ax1.set_xticklabels(sorted_intervals, rotation=45, ha='right')
+            ax1.set_xticklabels(intervals, rotation=45, ha='right')
 
             ax2 = ax1.twinx()
-            ax2.plot(sorted_intervals, cumulative_percentages, color='red', marker='o')
+            ax2.plot(intervals, cumulative_percentages, color='red', marker='o')
             ax2.set_ylabel('Cumulative Percentage', color='red')
             ax2.tick_params(axis='y', labelcolor='red')
             ax2.set_ylim(0, 110)
@@ -123,4 +144,4 @@ if st.session_state.started:
             st.pyplot(fig)
 
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}. Please make sure to provide valid inputs.")
+            st.error(f"❌ Error: {str(e)}")
