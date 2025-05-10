@@ -51,7 +51,7 @@ def has_totals(df):
 
     return row_totals.equals(expected_row_totals) and col_totals.equals(expected_col_totals)
 
-st.title("Cross Table Detector (Position Independent)")
+st.title("Cross Table & Grouped Bar Chart Generator")
 
 with st.sidebar:
     uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
