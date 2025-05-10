@@ -21,9 +21,14 @@ if "started" not in st.session_state:
 if not st.session_state.started:
     if st.button("Start"):
         st.session_state.started = True  # Set to True once button is clicked
+        st.session_state.rerun_triggered = True  # Simulate rerun by updating a session state
 
 # Main part of the app (only runs after "Start" is clicked)
 if st.session_state.started:
+    if "rerun_triggered" in st.session_state and st.session_state.rerun_triggered:
+        # You can reset or modify session state to simulate rerun behavior
+        st.session_state.rerun_triggered = False  # Reset the rerun trigger flag
+
     with st.sidebar:
         st.header("Input Data")
         input_method = st.radio("How do you want to provide your data?", ["Upload Excel file", "Enter manually"])
