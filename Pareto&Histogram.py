@@ -4,7 +4,7 @@ import numpy as np
 import math
 import pandas as pd
 
-st.title("Frequency & Pareto Chart & Histogram Generator")
+st.title("Frequency, Pareto Chart & Histogram Generator")
 
 def get_excel_column_name(n):
     name = ''
@@ -13,7 +13,7 @@ def get_excel_column_name(n):
         n = n // 26 - 1
     return name
 
-# Sidebar for data input directly
+# Sidebar for data input
 with st.sidebar:
     st.header("Input Data")
     input_method = st.radio("How do you want to provide your data?", ["Upload Excel file", "Enter manually"])
@@ -51,7 +51,7 @@ with st.sidebar:
 
     st.button("Finish")
 
-# Main app part to process the data and generate the frequency & Pareto chart
+# Main app section
 col1, col2 = st.columns([1, 2])
 
 with col2:
@@ -63,6 +63,7 @@ with col2:
             diff = largest - smallest
             interval_length = math.ceil(diff / interval)
 
+            # Frequency Table (raw numbers)
             frequency_dict = {}
             for num in data:
                 frequency_dict[num] = frequency_dict.get(num, 0) + 1
@@ -75,29 +76,36 @@ with col2:
             st.subheader("User Input Frequency Table")
             st.table(freq_df)
 
-            # Create unsorted intervals for histogram
+            # Interval Classification
             raw_intervals = []
             raw_frequencies = []
             raw_relative_frequencies = []
-
             interval_edges = []
+            first = True
             start = smallest
+
             while start < largest:
                 end = start + interval_length
-                label = f"{round(start, 2)} < x ≤ {round(end, 2)}"
-                count = sum(start < x <= end for x in data)
+                if first:
+                    label = f"{round(start, 2)} ≤ x ≤ {round(end, 2)}"
+                    count = sum(start <= x <= end for x in data)
+                    first = False
+                else:
+                    label = f"{round(start, 2)} < x ≤ {round(end, 2)}"
+                    count = sum(start < x <= end for x in data)
+
                 raw_intervals.append(label)
                 raw_frequencies.append(count)
                 raw_relative_frequencies.append(round(count / len(data), 4))
                 interval_edges.append((start, end))
                 start = end
 
-            # Sort intervals for Pareto chart
+            # Sort for Pareto
             zipped = list(zip(raw_intervals, raw_frequencies, raw_relative_frequencies))
             zipped_sorted = sorted(zipped, key=lambda x: x[1], reverse=True)
             intervals_sorted, frequencies_sorted, relative_frequencies_sorted = zip(*zipped_sorted)
 
-            # Interval Frequency Table (Sorted)
+            # Interval Frequency Table (sorted)
             interval_df = pd.DataFrame({
                 "Interval": intervals_sorted,
                 "Frequency": frequencies_sorted,
@@ -121,7 +129,7 @@ with col2:
 
             # Pareto Chart
             fig, ax1 = plt.subplots(figsize=(8, 5))
-            bars = ax1.bar(intervals_sorted, frequencies_sorted, color='skyblue', alpha=0.7)
+            ax1.bar(intervals_sorted, frequencies_sorted, color='skyblue', alpha=0.7)
             ax1.set_xlabel("Intervals")
             ax1.set_ylabel("Frequency", color='blue')
             ax1.tick_params(axis='y', labelcolor='blue')
@@ -138,12 +146,12 @@ with col2:
             st.subheader("Pareto Chart")
             st.pyplot(fig)
 
-            # Histogram (keep natural interval order)
-            bin_edges = [start for start, _ in interval_edges] + [interval_edges[-1][1]]
+            # Histogram (natural order of bins)
+            bin_edges = [edge[0] for edge in interval_edges] + [interval_edges[-1][1]]
             fig_hist, ax_hist = plt.subplots(figsize=(8, 5))
             ax_hist.hist(data, bins=bin_edges, color='lightgreen', edgecolor='black', alpha=0.7)
 
-            # Set x-ticks to match the interval labels
+            # Custom x-tick labels
             midpoints = [start + (end - start) / 2 for start, end in interval_edges]
             ax_hist.set_xticks(midpoints)
             ax_hist.set_xticklabels(raw_intervals, rotation=45, ha='right')
@@ -151,7 +159,6 @@ with col2:
             ax_hist.set_xlabel("Intervals")
             ax_hist.set_ylabel("Frequency")
             ax_hist.set_title("Histogram")
-            plt.setp(ax_hist.get_xticklabels(), rotation=45, ha='right')
             st.subheader("Histogram")
             st.pyplot(fig_hist)
 
