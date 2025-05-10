@@ -75,89 +75,85 @@ with col2:
             st.subheader("User Input Frequency Table")
             st.table(freq_df)
 
-            # Build intervals in "k < x ≤ k2" format
-            intervals = []
-            frequencies = []
-            relative_frequencies = []
+            # Create unsorted intervals for histogram
+            raw_intervals = []
+            raw_frequencies = []
+            raw_relative_frequencies = []
 
+            interval_edges = []
             start = smallest
             while start < largest:
                 end = start + interval_length
                 label = f"{round(start, 2)} < x ≤ {round(end, 2)}"
                 count = sum(start < x <= end for x in data)
-                intervals.append(label)
-                frequencies.append(count)
-                relative_frequencies.append(round(count / len(data), 4))
+                raw_intervals.append(label)
+                raw_frequencies.append(count)
+                raw_relative_frequencies.append(round(count / len(data), 4))
+                interval_edges.append((start, end))
                 start = end
 
-            if intervals:
-                interval_df = pd.DataFrame({
-                    "Interval": intervals,
-                    "Frequency": frequencies,
-                    "Relative Frequency": relative_frequencies
-                }).reset_index(drop=True)
-                interval_df.index += 1
+            # Sort intervals for Pareto chart
+            zipped = list(zip(raw_intervals, raw_frequencies, raw_relative_frequencies))
+            zipped_sorted = sorted(zipped, key=lambda x: x[1], reverse=True)
+            intervals_sorted, frequencies_sorted, relative_frequencies_sorted = zip(*zipped_sorted)
 
-                st.subheader("Interval Frequency Table")
-                st.table(interval_df)
+            # Interval Frequency Table (Sorted)
+            interval_df = pd.DataFrame({
+                "Interval": intervals_sorted,
+                "Frequency": frequencies_sorted,
+                "Relative Frequency": relative_frequencies_sorted
+            }).reset_index(drop=True)
+            interval_df.index += 1
+            st.subheader("Interval Frequency Table (Sorted by Frequency)")
+            st.table(interval_df)
 
-                cumulative_freq = np.cumsum(frequencies)
-                cumulative_percentages = (cumulative_freq / cumulative_freq[-1]) * 100
+            # Pareto Table
+            cumulative_freq = np.cumsum(frequencies_sorted)
+            cumulative_percentages = (cumulative_freq / cumulative_freq[-1]) * 100
+            pareto_df = pd.DataFrame({
+                "Interval": intervals_sorted,
+                "Cumulative Frequency": cumulative_freq,
+                "Cumulative %": cumulative_percentages
+            }).reset_index(drop=True)
+            pareto_df.index += 1
+            st.subheader("Pareto Table")
+            st.table(pareto_df)
 
-                pareto_df = pd.DataFrame({
-                    "Interval": intervals,
-                    "Cumulative Frequency": cumulative_freq,
-                    "Cumulative %": cumulative_percentages
-                }).reset_index(drop=True)
-                pareto_df.index += 1
+            # Pareto Chart
+            fig, ax1 = plt.subplots(figsize=(8, 5))
+            bars = ax1.bar(intervals_sorted, frequencies_sorted, color='skyblue', alpha=0.7)
+            ax1.set_xlabel("Intervals")
+            ax1.set_ylabel("Frequency", color='blue')
+            ax1.tick_params(axis='y', labelcolor='blue')
+            plt.setp(ax1.get_xticklabels(), rotation=45, ha='right')
 
-                st.subheader("Pareto (Cumulative Frequency Table)")
-                st.table(pareto_df)
+            ax2 = ax1.twinx()
+            ax2.plot(intervals_sorted, cumulative_percentages, color='red', marker='o', linestyle='-')
+            ax2.set_ylabel("Cumulative Percentage (%)", color='red')
+            ax2.tick_params(axis='y', labelcolor='red')
+            ax2.set_ylim(0, 110)
 
-                fig, ax1 = plt.subplots(figsize=(8, 5))
-                bars = ax1.bar(intervals, frequencies, color='skyblue', alpha=0.7)
-                ax1.set_xlabel("Intervals")
-                ax1.set_ylabel("Frequency", color='blue')
-                ax1.tick_params(axis='y', labelcolor='blue')
-                plt.setp(ax1.get_xticklabels(), rotation=45, ha='right')
+            plt.title("Pareto Chart (Sorted by Frequency)")
+            plt.grid(True, linestyle="--", alpha=0.7)
+            st.subheader("Pareto Chart")
+            st.pyplot(fig)
 
-                ax2 = ax1.twinx()
-                ax2.plot(intervals, cumulative_percentages, color='red', marker='o', linestyle='-')
-                ax2.set_ylabel("Cumulative Percentage (%)", color='red')
-                ax2.tick_params(axis='y', labelcolor='red')
-                ax2.set_ylim(0, 110)
+            # Histogram (keep natural interval order)
+            bin_edges = [start for start, _ in interval_edges] + [interval_edges[-1][1]]
+            fig_hist, ax_hist = plt.subplots(figsize=(8, 5))
+            ax_hist.hist(data, bins=bin_edges, color='lightgreen', edgecolor='black', alpha=0.7)
 
-                plt.title("Pareto Chart")
-                plt.grid(True, linestyle="--", alpha=0.7)
-                st.subheader("Pareto Chart")
-                st.pyplot(fig)
+            # Set x-ticks to match the interval labels
+            midpoints = [start + (end - start) / 2 for start, end in interval_edges]
+            ax_hist.set_xticks(midpoints)
+            ax_hist.set_xticklabels(raw_intervals, rotation=45, ha='right')
 
-                # Generate Histogram with interval labels on x-axis
-                interval_edges = []
-                for interval in intervals:
-                    start, end = interval.split("< x ≤ ")
-                    interval_edges.append((float(start), float(end)))
-
-                bin_edges = [start for start, _ in interval_edges] + [interval_edges[-1][1]]
-
-                fig_hist, ax_hist = plt.subplots(figsize=(8, 5))
-
-                # Use intervals as x-tick labels
-                ax_hist.hist(data, bins=bin_edges, color='lightgreen', edgecolor='black', alpha=0.7)
-
-                # Set x-ticks to match the interval labels
-                ax_hist.set_xticks([start + (end - start) / 2 for start, end in interval_edges])  # Place tick in the middle of the interval
-                ax_hist.set_xticklabels(intervals, rotation=45, ha='right')
-
-                ax_hist.set_xlabel("Intervals")
-                ax_hist.set_ylabel("Frequency")
-                ax_hist.set_title("Histogram")
-                plt.setp(ax_hist.get_xticklabels(), rotation=45, ha='right')
-                st.subheader("Histogram")
-                st.pyplot(fig_hist)
-
-            else:
-                st.warning("⚠️ No valid intervals generated. Check your data or number of intervals.")
+            ax_hist.set_xlabel("Intervals")
+            ax_hist.set_ylabel("Frequency")
+            ax_hist.set_title("Histogram")
+            plt.setp(ax_hist.get_xticklabels(), rotation=45, ha='right')
+            st.subheader("Histogram")
+            st.pyplot(fig_hist)
 
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
