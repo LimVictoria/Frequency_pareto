@@ -4,7 +4,7 @@ import numpy as np
 import math
 import pandas as pd
 
-st.title("Frequency & Pareto Chart Generator")
+st.title("Frequency table & Pareto Chart & Histogram Generator")
 
 def get_excel_column_name(n):
     name = ''
@@ -132,12 +132,20 @@ with col2:
                 st.subheader("Pareto Chart")
                 st.pyplot(fig)
 
-                # Generate Histogram
+                # Generate Histogram with intervals on x-axis
+                interval_edges = []
+                for interval in intervals:
+                    start, end = interval.split("< x ≤ ")
+                    interval_edges.append((float(start), float(end)))
+
+                bin_edges = [start for start, _ in interval_edges] + [interval_edges[-1][1]]
+
                 fig_hist, ax_hist = plt.subplots(figsize=(8, 5))
-                ax_hist.hist(data, bins=interval, color='lightgreen', edgecolor='black', alpha=0.7)
-                ax_hist.set_xlabel("Value")
+                ax_hist.hist(data, bins=bin_edges, color='lightgreen', edgecolor='black', alpha=0.7)
+                ax_hist.set_xlabel("Intervals")
                 ax_hist.set_ylabel("Frequency")
                 ax_hist.set_title("Histogram")
+                plt.setp(ax_hist.get_xticklabels(), rotation=45, ha='right')
                 st.subheader("Histogram")
                 st.pyplot(fig_hist)
 
@@ -146,4 +154,3 @@ with col2:
 
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
-
