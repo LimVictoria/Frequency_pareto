@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
 def find_cross_table(df):
     rows, cols = df.shape
@@ -31,30 +33,23 @@ def find_cross_table(df):
 
     return None, None, None, None, None
 
-
 def has_totals(df):
-    # Check if the last column contains totals
+    if df.empty:
+        return False
+
     last_col = df.iloc[:, -1]
-    if last_col.isna().all():  # If the last column has any NaN, it doesn't contain totals
-        return False
-
-    # Check if the last row contains totals
     last_row = df.iloc[-1, :]
-    if last_row.isna().all():  # If the last row has any NaN, it doesn't contain totals
+
+    if last_col.isna().any() or last_row.isna().any():
         return False
 
-    # Validate if the row totals and column totals are correct
     row_totals = df.iloc[:-1, -1]
     col_totals = df.iloc[-1, :-1]
 
     expected_row_totals = df.iloc[:-1, :-1].sum(axis=1)
     expected_col_totals = df.iloc[:-1, :-1].sum(axis=0)
 
-    if not row_totals.equals(expected_row_totals) or not col_totals.equals(expected_col_totals):
-        return False
-
-    return True
-
+    return row_totals.equals(expected_row_totals) and col_totals.equals(expected_col_totals)
 
 st.title("Cross Table Detector (Position Independent)")
 
@@ -73,7 +68,6 @@ if uploaded_file:
         end_cell = f"{chr(65 + c_end)}{r_end + 1}"
         st.success(f"✅ Cross table detected from **{start_cell}** to **{end_cell}**")
 
-        # --- Clean the detected cross table ---
         detected = result.copy()
         detected.columns = detected.iloc[0]
         detected = detected[1:]
@@ -84,17 +78,56 @@ if uploaded_file:
         st.subheader("Detected Cross Table (Original)")
         st.dataframe(detected)
 
-        # --- Check if totals are already present ---
         if not has_totals(detected):
-            # Create copy with totals if not present
             with_totals = detected.copy()
             with_totals["Total"] = with_totals.sum(axis=1)
             total_row = with_totals.sum(axis=0)
             total_row.name = "Total"
             with_totals = pd.concat([with_totals, total_row.to_frame().T])
-
             st.subheader("Cross Table with Totals")
             st.dataframe(with_totals)
+        else:
+            with_totals = detected.copy()
+
+        # Remove 'Total' row and column for visualization clarity
+        if "Total" in with_totals.columns:
+            with_totals = with_totals.drop(columns=["Total"])
+        if "Total" in with_totals.index:
+            with_totals = with_totals.drop(index="Total")
+
+        # Grouped bar chart (by rows)
+        st.subheader("Grouped Bar Chart (Row-wise)")
+        fig1, ax1 = plt.subplots(figsize=(12, 6))
+
+        x = np.arange(len(with_totals.index))  # Positions for row labels
+        bar_width = 0.8 / len(with_totals.columns)  # Distribute bars within group
+
+        for i, col in enumerate(with_totals.columns):
+            ax1.bar(x + i * bar_width, with_totals[col], width=bar_width, label=col)
+
+        ax1.set_ylabel('Value')
+        ax1.set_title('Grouped Bar Chart (by Rows)')
+        ax1.set_xticks(x + bar_width * (len(with_totals.columns) / 2 - 0.5))
+        ax1.set_xticklabels(with_totals.index, rotation=45)
+        ax1.legend(title="Columns")
+        st.pyplot(fig1)
+
+        # Grouped bar chart (by columns)
+        st.subheader("Grouped Bar Chart (Column-wise)")
+        fig2, ax2 = plt.subplots(figsize=(12, 6))
+
+        x_col = np.arange(len(with_totals.columns))  # Positions for column labels
+        bar_width_col = 0.8 / len(with_totals.index)
+
+        for i, row in enumerate(with_totals.index):
+            ax2.bar(x_col + i * bar_width_col, with_totals.loc[row], width=bar_width_col, label=row)
+
+        ax2.set_ylabel('Value')
+        ax2.set_title('Grouped Bar Chart (by Columns)')
+        ax2.set_xticks(x_col + bar_width_col * (len(with_totals.index) / 2 - 0.5))
+        ax2.set_xticklabels(with_totals.columns, rotation=45)
+        ax2.legend(title="Rows")
+        st.pyplot(fig2)
 
     else:
         st.error("❌ No cross table detected with required pattern.")
