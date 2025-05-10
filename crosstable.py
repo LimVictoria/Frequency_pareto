@@ -5,23 +5,19 @@ import numpy as np
 
 def find_cross_table(df):
     rows, cols = df.shape
-
     for r in range(rows - 1):
         for c in range(cols - 1):
             if not isinstance(df.iat[r, c], str):
-                continue  # top-left must be a string
+                continue
 
-            # Detect column headers (rightwards from top-left)
             col_end = c + 1
             while col_end < cols and isinstance(df.iat[r, col_end], str):
                 col_end += 1
 
-            # Detect row labels (downwards from top-left)
             row_end = r + 1
             while row_end < rows and isinstance(df.iat[row_end, c], str):
                 row_end += 1
 
-            # Extract numeric body
             body = df.iloc[r+1:row_end, c+1:col_end]
             try:
                 numeric_body = pd.to_numeric(body.stack(), errors='coerce')
@@ -89,18 +85,18 @@ if uploaded_file:
         else:
             with_totals = detected.copy()
 
-        # Remove 'Total' row and column for visualization clarity
+        # Remove totals for plotting
         if "Total" in with_totals.columns:
             with_totals = with_totals.drop(columns=["Total"])
         if "Total" in with_totals.index:
             with_totals = with_totals.drop(index="Total")
 
-        # Grouped bar chart (by rows)
+        # Grouped Bar Chart (Row-wise)
         st.subheader("Grouped Bar Chart (Row-wise)")
         fig1, ax1 = plt.subplots(figsize=(12, 6))
 
-        x = np.arange(len(with_totals.index))  # Positions for row labels
-        bar_width = 0.8 / len(with_totals.columns)  # Distribute bars within group
+        x = np.arange(len(with_totals.index))
+        bar_width = 0.8 / len(with_totals.columns)
 
         for i, col in enumerate(with_totals.columns):
             ax1.bar(x + i * bar_width, with_totals[col], width=bar_width, label=col)
@@ -112,15 +108,18 @@ if uploaded_file:
         ax1.legend(title="Columns")
         st.pyplot(fig1)
 
-        # Grouped bar chart (by columns)
+        # Grouped Bar Chart (Column-wise)
         st.subheader("Grouped Bar Chart (Column-wise)")
         fig2, ax2 = plt.subplots(figsize=(12, 6))
 
-        x_col = np.arange(len(with_totals.columns))  # Positions for column labels
+        x_col = np.arange(len(with_totals.columns))
         bar_width_col = 0.8 / len(with_totals.index)
 
-        for i, row in enumerate(with_totals.index):
-            ax2.bar(x_col + i * bar_width_col, with_totals.loc[row], width=bar_width_col, label=row)
+        for i, (row_label, row_data) in enumerate(with_totals.iterrows()):
+            x_positions = x_col + i * bar_width_col
+            heights = row_data.values.astype(float)
+            ax2.bar(x_positions, heights, width=bar_width_col, label=row_label)
+
 
         ax2.set_ylabel('Value')
         ax2.set_title('Grouped Bar Chart (by Columns)')
