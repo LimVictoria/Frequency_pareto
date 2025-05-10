@@ -1,13 +1,11 @@
 import streamlit as st
-import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 import math
-import plotly.graph_objects as go
+import pandas as pd
 
-st.set_page_config(page_title="Frequency & Pareto Chart Generator", layout="wide")
-st.title("📊 Frequency & Pareto Chart Generator")
+st.title("Frequency & Pareto Chart Generator")
 
-# Utility to convert column index to Excel-style letters
 def get_excel_column_name(n):
     name = ''
     while n >= 0:
@@ -15,15 +13,14 @@ def get_excel_column_name(n):
         n = n // 26 - 1
     return name
 
-# Session state to control Start screen
 if "started" not in st.session_state:
     st.session_state.started = False
 
 if not st.session_state.started:
     if st.button("Start"):
         st.session_state.started = True
+        st.experimental_rerun()
 
-# Main logic
 if st.session_state.started:
     with st.sidebar:
         st.header("Input Data")
@@ -39,11 +36,10 @@ if st.session_state.started:
                     if df_cleaned.shape[1] == 0:
                         st.error("❌ No usable data found in the uploaded Excel file.")
                     else:
-                        column_mapping = {
-                            get_excel_column_name(i): col
-                            for i, col in enumerate(df.columns)
-                            if not df[col].dropna().empty
-                        }
+                        column_mapping = {}
+                        for i, col in enumerate(df.columns):
+                            if not df[col].dropna().empty:
+                                column_mapping[get_excel_column_name(i)] = col
                         selected_key = list(column_mapping.keys())[0] if len(column_mapping) == 1 else st.selectbox("Select column:", list(column_mapping.keys()))
                         selected_column = column_mapping[selected_key]
                         data = df[selected_column].dropna().tolist()
@@ -74,7 +70,6 @@ if st.session_state.started:
                 diff = largest - smallest
                 interval_length = math.ceil(diff / interval)
 
-                # Raw frequency table
                 frequency_dict = {}
                 for num in data:
                     frequency_dict[num] = frequency_dict.get(num, 0) + 1
@@ -87,7 +82,7 @@ if st.session_state.started:
                 st.subheader("User Input Frequency Table")
                 st.table(freq_df)
 
-                # Interval construction
+                # Build intervals in "k < x ≤ k2" format
                 intervals = []
                 frequencies = []
                 relative_frequencies = []
@@ -126,46 +121,23 @@ if st.session_state.started:
                     st.subheader("Pareto (Cumulative Frequency Table)")
                     st.table(pareto_df)
 
-                    # Plotly Pareto Chart with hover interaction
-                    fig = go.Figure()
+                    fig, ax1 = plt.subplots(figsize=(8, 5))
+                    bars = ax1.bar(intervals, frequencies, color='skyblue', alpha=0.7)
+                    ax1.set_xlabel("Intervals")
+                    ax1.set_ylabel("Frequency", color='blue')
+                    ax1.tick_params(axis='y', labelcolor='blue')
+                    plt.setp(ax1.get_xticklabels(), rotation=45, ha='right')
 
-                    # Bar chart for frequencies
-                    fig.add_trace(go.Bar(
-                        x=intervals,
-                        y=frequencies,
-                        name='Frequency',
-                        marker_color='skyblue',
-                        hovertemplate='Interval: %{x}<br>Frequency: %{y}<extra></extra>'
-                    ))
+                    ax2 = ax1.twinx()
+                    ax2.plot(intervals, cumulative_percentages, color='red', marker='o', linestyle='-')
+                    ax2.set_ylabel("Cumulative Percentage (%)", color='red')
+                    ax2.tick_params(axis='y', labelcolor='red')
+                    ax2.set_ylim(0, 110)
 
-                    # Line chart for cumulative %
-                    fig.add_trace(go.Scatter(
-                        x=intervals,
-                        y=cumulative_percentages,
-                        name='Cumulative %',
-                        mode='lines+markers',
-                        marker=dict(color='red'),
-                        yaxis='y2',
-                        hovertemplate='Interval: %{x}<br>Cumulative %: %{y:.2f}%<extra></extra>'
-                    ))
-
-                    fig.update_layout(
-                        title="Pareto Chart",
-                        xaxis=dict(title="Intervals"),
-                        yaxis=dict(title="Frequency"),
-                        yaxis2=dict(
-                            title="Cumulative Percentage (%)",
-                            overlaying='y',
-                            side='right',
-                            range=[0, 110]
-                        ),
-                        legend=dict(x=0.01, y=0.99),
-                        margin=dict(t=40, b=40),
-                        height=500
-                    )
-
-                    st.subheader("📈 Interactive Pareto Chart")
-                    st.plotly_chart(fig, use_container_width=True)
+                    plt.title("Pareto Chart")
+                    plt.grid(True, linestyle="--", alpha=0.7)
+                    st.subheader("Pareto Chart")
+                    st.pyplot(fig)
                 else:
                     st.warning("⚠️ No valid intervals generated. Check your data or number of intervals.")
 
