@@ -85,6 +85,10 @@ if st.session_state.started:
                 "Number": numbers,
                 "Frequency": freq_values
             })
+
+            # Reset index to start from 1
+            freq_df = freq_df.reset_index(drop=True)
+            freq_df.index += 1
             st.subheader("User Input Frequency Table")
             st.table(freq_df)
 
@@ -106,6 +110,10 @@ if st.session_state.started:
                 "Frequency": frequencies,
                 "Relative Frequency": relative_frequencies
             })
+
+            # Reset index to start from 1
+            interval_df = interval_df.reset_index(drop=True)
+            interval_df.index += 1
             st.subheader("Interval Frequency Table")
             st.table(interval_df)
 
@@ -117,6 +125,10 @@ if st.session_state.started:
                 "Cumulative Frequency": cumulative_frequencies,
                 "Cumulative %": cumulative_percentages
             })
+
+            # Reset index to start from 1
+            pareto_df = pareto_df.reset_index(drop=True)
+            pareto_df.index += 1
             st.subheader("Pareto (Cumulative Frequency Table)")
             st.table(pareto_df)
 
