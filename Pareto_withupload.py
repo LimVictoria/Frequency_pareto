@@ -13,14 +13,17 @@ def get_excel_column_name(n):
         n = n // 26 - 1
     return name
 
+# Initialize session state only if it's not already initialized
 if "started" not in st.session_state:
     st.session_state.started = False
 
+# Display "Start" button only if the session is not started
 if not st.session_state.started:
     if st.button("Start"):
-        st.session_state.started = True
-        st.experimental_rerun()
+        st.session_state.started = True  # Set to True once button is clicked
+        st.experimental_rerun()  # Only rerun after the button is clicked
 
+# Main part of the app (only runs after "Start" is clicked)
 if st.session_state.started:
     with st.sidebar:
         st.header("Input Data")
@@ -57,12 +60,12 @@ if st.session_state.started:
 
         num_intervals = st.text_input("Enter number of intervals:", "")
 
-        finish_button = st.button("Finish")
+        st.button("Finish")
 
     col1, col2 = st.columns([1, 2])
 
     with col2:
-        if finish_button and data and num_intervals.isdigit():
+        if data and num_intervals.isdigit():
             try:
                 interval = int(num_intervals)
                 largest = max(data)
@@ -70,12 +73,10 @@ if st.session_state.started:
                 diff = largest - smallest
                 interval_length = math.ceil(diff / interval)
 
-                # Calculate frequency distribution
                 frequency_dict = {}
                 for num in data:
                     frequency_dict[num] = frequency_dict.get(num, 0) + 1
 
-                # Create Frequency DataFrame
                 freq_df = pd.DataFrame({
                     "Number": [round(k, 2) for k in frequency_dict.keys()],
                     "Frequency": list(frequency_dict.values())
@@ -84,7 +85,7 @@ if st.session_state.started:
                 st.subheader("User Input Frequency Table")
                 st.table(freq_df)
 
-                # Build intervals
+                # Build intervals in "k < x ≤ k2" format
                 intervals = []
                 frequencies = []
                 relative_frequencies = []
@@ -123,7 +124,6 @@ if st.session_state.started:
                     st.subheader("Pareto (Cumulative Frequency Table)")
                     st.table(pareto_df)
 
-                    # Create Pareto Chart
                     fig, ax1 = plt.subplots(figsize=(8, 5))
                     bars = ax1.bar(intervals, frequencies, color='skyblue', alpha=0.7)
                     ax1.set_xlabel("Intervals")
