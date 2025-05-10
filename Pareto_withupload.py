@@ -21,7 +21,6 @@ if "started" not in st.session_state:
 if not st.session_state.started:
     if st.button("Start"):
         st.session_state.started = True  # Set to True once button is clicked
-        st.experimental_rerun()  # Only rerun after the button is clicked
 
 # Main part of the app (only runs after "Start" is clicked)
 if st.session_state.started:
