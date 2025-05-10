@@ -2,3 +2,4 @@ streamlit
 matplotlib
 tabulate
 numpy
+plotly
