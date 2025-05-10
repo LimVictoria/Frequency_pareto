@@ -4,7 +4,7 @@ import numpy as np
 import math
 import pandas as pd
 
-st.title("Frequency & Pareto Chart Generator")
+st.title("Frequency & Pareto Chart & Histogram Generator")
 
 def get_excel_column_name(n):
     name = ''
