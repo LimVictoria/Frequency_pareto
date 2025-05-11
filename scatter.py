@@ -131,7 +131,6 @@ if uploaded_file:
             else:
                 st.warning("❗ Not enough columns to plot.")
 
-            # Set plot limits if x and y are defined
             if x is not None and y is not None:
                 ax2d.set_xlim(left=0, right=max(x) * 1.1 if len(x) > 0 else 1)
                 ax2d.set_ylim(bottom=0, top=max(y) * 1.1 if len(y) > 0 else 1)
@@ -150,6 +149,10 @@ if uploaded_file:
                 ax3d.set_title("3D Scatter Plot (Cols 2, 3, 4)")
                 fig3d.colorbar(sc, ax=ax3d, shrink=0.5, aspect=10)
                 st.pyplot(fig3d)
+
+            # Show the detected cross table as a table
+            st.subheader("📋 Detected Cross Table")
+            st.dataframe(detected)
 
         except Exception as e:
             st.error(f"❌ Error generating plot: {e}")
