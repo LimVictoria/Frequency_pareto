@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.stats import skew
 
 
 # Function to detect cross tables in a DataFrame
@@ -47,7 +48,7 @@ def has_totals(df):
 
 
 # Streamlit app setup
-st.title("Cross Table Detector & Scatter Plot Visualizer")
+st.title("Flat table with index & Scatter Plot Generator")
 
 with st.sidebar:
     uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
@@ -65,7 +66,7 @@ if uploaded_file:
         # Display results of detected cross table
         start_cell = f"{chr(65 + c_start)}{r_start + 1}"
         end_cell = f"{chr(65 + c_end)}{r_end + 1}"
-        st.success(f"✅ Cross table detected from **{start_cell}** to **{end_cell}**")
+        st.success(f"✅ Flat table detected")
 
         # Prepare the detected table for plotting
         detected = result.copy()
@@ -92,7 +93,7 @@ if uploaded_file:
             with_totals = with_totals.drop(index="Total")
 
         # 2D Scatter Plot
-        st.subheader("2D/Color Scatter Plot (Auto-detected Columns)")
+        st.subheader("2D Scatter Plot")
         fig2d, ax2d = plt.subplots(figsize=(10, 6))
 
         num_columns = with_totals.shape[1]
@@ -129,7 +130,7 @@ if uploaded_file:
                 ax2d.set_ylabel(with_totals.columns[2])
                 ax2d.set_title("XY Scatter Plot (Cols 2 & 3)")
             else:
-                st.warning("❗ Not enough columns to plot.")
+                st.warning("❗ Not Flat table")
 
             if x is not None and y is not None:
                 ax2d.set_xlim(left=0, right=max(x) * 1.1 if len(x) > 0 else 1)
@@ -151,8 +152,40 @@ if uploaded_file:
                 st.pyplot(fig3d)
 
             # Show the detected cross table as a table
-            st.subheader("📋 Detected Cross Table")
+            st.subheader("Detected Flat Table")
             st.dataframe(detected)
+
+            # Display statistics and skewness
+            st.subheader("Statistics and Skewness")
+
+            def display_stats(label, data):
+                s = pd.Series(data)
+                mode_val = s.mode()
+                mode_val = mode_val.iloc[0] if not mode_val.empty else "N/A"
+                skew_val = skew(s.dropna())
+
+                if skew_val > 0:
+                    skew_desc = "Positive"
+                elif skew_val < 0:
+                    skew_desc = "Negative"
+                else:
+                    skew_desc = "Zero"
+
+                stats_df = pd.DataFrame({
+                    "Mean": [s.mean()],
+                    "Median": [s.median()],
+                    "Mode": [mode_val],
+                    "Skewness": [round(skew_val, 3)],
+                    "Skewness Type": [skew_desc]
+                }, index=[label])
+                st.table(stats_df)
+
+            if x is not None:
+                display_stats("X axis", x)
+            if y is not None:
+                display_stats("Y axis", y)
+            if z is not None:
+                display_stats("Z axis", z)
 
         except Exception as e:
             st.error(f"❌ Error generating plot: {e}")
