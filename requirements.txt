@@ -6,4 +6,5 @@ plotly
 streamlit>=1.45.0
 pandas
 openpyxl
-skew
+scipy
+
