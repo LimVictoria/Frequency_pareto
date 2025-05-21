@@ -274,5 +274,5 @@ with col2:
             else:
                 st.warning("Please enter a valid number of intervals.")
     else:
-        st.info("Please provide data using the sidebar above.")
+        st.info("Please provide data using the sidebar.")
 
