@@ -67,32 +67,28 @@ if data:
     ax.set_title("Original Data Histogram")
     st.pyplot(fig)
 
-    # CLT visualization only for n >= 30
+    # Central Limit Theorem plot if data size >= 30
     if len(data) >= 30:
-        st.subheader("📉 Sampling Distribution (CLT)")
-        st.markdown("This plot shows the distribution of sample means from repeated random sampling.")
+        st.subheader("📉 Central Limit Theorem (CLT) Approximation")
+        st.markdown("Since data ≥ 30, CLT can be applied. This shows the normal approximation of the sample mean.")
 
-        sample_size = st.slider("Sample size (n):", min_value=2, max_value=min(100, len(data)), value=30)
-        num_samples = st.slider("Number of samples to draw:", min_value=10, max_value=1000, value=200)
+        sample_mean = mean
+        sample_std = std / np.sqrt(len(data))  # Std dev of sample mean
 
-        sample_means = [np.mean(np.random.choice(data, size=sample_size, replace=True)) for _ in range(num_samples)]
+        x_vals = np.linspace(sample_mean - 4 * sample_std, sample_mean + 4 * sample_std, 300)
+        y_vals = norm.pdf(x_vals, sample_mean, sample_std)
 
-        fig3, ax3 = plt.subplots()
-        ax3.hist(sample_means, bins='auto', color='orange', edgecolor='black', density=True)
-
-        clt_mean = np.mean(sample_means)
-        clt_std = np.std(sample_means, ddof=1)
-        x_sample = np.linspace(min(sample_means), max(sample_means), 300)
-        y_sample = norm.pdf(x_sample, clt_mean, clt_std)
-        ax3.plot(x_sample, y_sample, 'red', linestyle='-', label='CLT Normal Curve')
-        ax3.set_title(f"Sampling Distribution of the Mean (n={sample_size})")
-        ax3.legend()
-        st.pyplot(fig3)
-
-        st.info("As the sample size increases, the sampling distribution approaches a normal distribution regardless of the original distribution (CLT).")
+        fig_clt, ax_clt = plt.subplots()
+        ax_clt.plot(x_vals, y_vals, 'red', label='Normal Curve (CLT)')
+        ax_clt.axvline(sample_mean, color='blue', linestyle='--', label=f'Mean = {sample_mean:.2f}')
+        ax_clt.axvline(sample_mean - sample_std, color='green', linestyle='--', label=f'Mean - Std Dev = {sample_mean - sample_std:.2f}')
+        ax_clt.axvline(sample_mean + sample_std, color='green', linestyle='--', label=f'Mean + Std Dev = {sample_mean + sample_std:.2f}')
+        ax_clt.set_title(f"CLT Approximation Using Full Data (n={len(data)})")
+        ax_clt.legend(loc='upper right', fontsize='small')
+        st.pyplot(fig_clt)
     else:
-        st.subheader("📉 Sampling Distribution (CLT)")
-        st.info("CLT simulation is only applicable when the dataset contains 30 or more values.")
+        st.subheader("📉 Central Limit Theorem (CLT) Approximation")
+        st.warning("❌ Data size less than 30. CLT cannot be applied reliably.")
 
     # Perform normalization
     if transformation == "Sample to Standard Normal":
@@ -111,7 +107,7 @@ if data:
     y_norm = norm.pdf(x_norm, 0, 1)
     ax2.plot(x_norm, y_norm, 'purple', linestyle='--', label='Standard Normal Curve')
     ax2.set_title("Standard Normal Histogram with Curve")
-    ax2.legend()
+    ax2.legend(loc='upper right', fontsize='small')
     st.pyplot(fig2)
 
 else:
