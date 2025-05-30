@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+from scipy.stats import norm, gaussian_kde
 
 # Helper to convert Excel column number to name
 def get_excel_column_name(n):
@@ -57,14 +57,18 @@ with st.sidebar:
 st.title("🔄 Normalization Visualizer")
 
 if data:
-    # Sample mean and std
+    # Sample statistics
     mean = np.mean(data)
     std = np.std(data, ddof=1)
 
+    # Original Data Distribution - KDE plot
     st.subheader("📊 Original Data Distribution")
-    fig, ax = plt.subplots()
-    ax.hist(data, bins='auto', color='skyblue', edgecolor='black', density=True)
-    ax.set_title("Original Data Histogram")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    density = gaussian_kde(data)
+    x_vals = np.linspace(min(data), max(data), 300)
+    ax.plot(x_vals, density(x_vals), color='skyblue', lw=2)
+    ax.fill_between(x_vals, 0, density(x_vals), color='skyblue', alpha=0.5)
+    ax.set_title("Original Data Density (KDE)")
     st.pyplot(fig)
 
     # Central Limit Theorem plot if data size >= 30
@@ -75,16 +79,16 @@ if data:
         sample_mean = mean
         sample_std = std / np.sqrt(len(data))  # Std dev of sample mean
 
-        x_vals = np.linspace(sample_mean - 4 * sample_std, sample_mean + 4 * sample_std, 300)
-        y_vals = norm.pdf(x_vals, sample_mean, sample_std)
+        x_clt = np.linspace(sample_mean - 4 * sample_std, sample_mean + 4 * sample_std, 300)
+        y_clt = norm.pdf(x_clt, sample_mean, sample_std)
 
-        fig_clt, ax_clt = plt.subplots()
-        ax_clt.plot(x_vals, y_vals, 'red', label='Normal Curve (CLT)')
+        fig_clt, ax_clt = plt.subplots(figsize=(6, 4))
+        ax_clt.plot(x_clt, y_clt, 'red', label='Normal Curve (CLT)')
         ax_clt.axvline(sample_mean, color='blue', linestyle='--', label=f'Mean = {sample_mean:.2f}')
         ax_clt.axvline(sample_mean - sample_std, color='green', linestyle='--', label=f'Mean - Std Dev = {sample_mean - sample_std:.2f}')
         ax_clt.axvline(sample_mean + sample_std, color='green', linestyle='--', label=f'Mean + Std Dev = {sample_mean + sample_std:.2f}')
         ax_clt.set_title(f"CLT Approximation Using Full Data (n={len(data)})")
-        ax_clt.legend(loc='upper right', fontsize='small')
+        ax_clt.legend(title=f"Sample Std Dev = {sample_std:.4f}", loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
         st.subheader("📉 Central Limit Theorem (CLT) Approximation")
@@ -98,11 +102,10 @@ if data:
         norm_data = [(x - pop_mean) / pop_std for x in data]
         st.success(f"Population Mean: {pop_mean:.2f}, Population Std Dev: {pop_std:.2f}")
 
-    # Normalized data plot
+    # Normalized data plot with histogram + standard normal curve
     st.subheader("📈 Standard Normalized Distribution")
-    fig2, ax2 = plt.subplots()
+    fig2, ax2 = plt.subplots(figsize=(6, 4))
     ax2.hist(norm_data, bins='auto', color='lightgreen', edgecolor='black', density=True)
-
     x_norm = np.linspace(min(norm_data), max(norm_data), 300)
     y_norm = norm.pdf(x_norm, 0, 1)
     ax2.plot(x_norm, y_norm, 'purple', linestyle='--', label='Standard Normal Curve')
