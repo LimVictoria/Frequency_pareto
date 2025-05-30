@@ -173,4 +173,4 @@ if data:
         ax2.legend(loc='upper right', fontsize='small')
         st.pyplot(fig2)
 else:
-    st.warning("⚠️ Please provide input data to continue.")
+    st.warning("Please provide data using the sidebar.")
