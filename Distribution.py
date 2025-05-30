@@ -61,8 +61,10 @@ if data:
     mean = np.mean(data)
     std = np.std(data, ddof=1)
 
+
+
     # Original Data Distribution - KDE plot
-    st.subheader("📊 Original Data Distribution")
+    st.subheader("Original Data Distribution")
     fig, ax = plt.subplots(figsize=(6, 4))
     density = gaussian_kde(data)
     x_vals = np.linspace(min(data), max(data), 300)
@@ -71,39 +73,54 @@ if data:
     ax.set_title("Original Data Density (KDE)")
     st.pyplot(fig)
 
-    # Central Limit Theorem plot if data size >= 30
+    sem = std / np.sqrt(len(data))
+
+    st.markdown("""
+    #### Calculation Formulas:
+    - **Sample Mean**: 𝑥̄ = (Σxᵢ) / n  
+    - **Sample Standard Deviation (s)**: s = √[ Σ(xᵢ - 𝑥̄)² / (n - 1) ]
+    - **Standard Error of the Mean (SEM)**: σₓ̄ = s / √n
+
+    #### Computed Statistics:
+    """)
+    st.markdown(f"""
+    - **Count (n)**: {len(data)}  
+    - **Sample Mean (𝑥̄)**: {mean:.4f}  
+    - **Sample Standard Deviation (s)**: {std:.4f}  
+    - **Standard Error of Mean (SEM, σₓ̄)**: {sem:.4f}
+    """)
+
+    
+    # CLT Plot
+    st.subheader("Central Limit Theorem (CLT) Approximation")
     if len(data) >= 30:
-        st.subheader("📉 Central Limit Theorem (CLT) Approximation")
         st.markdown("Since data ≥ 30, CLT can be applied. This shows the normal approximation of the sample mean.")
-
-        sample_mean = mean
         sample_std = std / np.sqrt(len(data))  # Std dev of sample mean
-
-        x_clt = np.linspace(sample_mean - 4 * sample_std, sample_mean + 4 * sample_std, 300)
-        y_clt = norm.pdf(x_clt, sample_mean, sample_std)
+        x_clt = np.linspace(mean - 4 * sample_std, mean + 4 * sample_std, 300)
+        y_clt = norm.pdf(x_clt, mean, sample_std)
 
         fig_clt, ax_clt = plt.subplots(figsize=(6, 4))
-        ax_clt.plot(x_clt, y_clt, 'red', label='Normal Curve (CLT)')
-        ax_clt.axvline(sample_mean, color='blue', linestyle='--', label=f'Mean = {sample_mean:.2f}')
-        ax_clt.axvline(sample_mean - sample_std, color='green', linestyle='--', label=f'Mean - Std Dev = {sample_mean - sample_std:.2f}')
-        ax_clt.axvline(sample_mean + sample_std, color='green', linestyle='--', label=f'Mean + Std Dev = {sample_mean + sample_std:.2f}')
+        ax_clt.plot(x_clt, y_clt, 'red', label='Normal Distribution Curve (CLT)')
+        ax_clt.axvline(mean, color='blue', linestyle='--', label=f'Mean = {mean:.2f}')
+        ax_clt.axvline(mean - sample_std, color='green', linestyle='--', label=f'Mean - Std Dev = {mean - sample_std:.2f}')
+        ax_clt.axvline(mean + sample_std, color='green', linestyle='--', label=f'Mean + Std Dev = {mean + sample_std:.2f}')
         ax_clt.set_title(f"CLT Approximation Using Full Data (n={len(data)})")
         ax_clt.legend(title=f"Sample Std Dev = {sample_std:.4f}", loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
-        st.subheader("📉 Central Limit Theorem (CLT) Approximation")
         st.warning("❌ Data size less than 30. CLT cannot be applied reliably.")
 
     # Perform normalization
+    st.subheader("Normalization")
     if transformation == "Sample to Standard Normal":
         norm_data = [(x - mean) / std for x in data]
-        st.success(f"Sample Mean: {mean:.2f}, Sample Std Dev: {std:.2f}")
+        st.success(f"✅ Normalized using Sample Mean and Std Dev:\nMean = {mean:.2f}, Std Dev = {std:.2f}")
     else:
         norm_data = [(x - pop_mean) / pop_std for x in data]
-        st.success(f"Population Mean: {pop_mean:.2f}, Population Std Dev: {pop_std:.2f}")
+        st.success(f"✅ Normalized using Population Mean and Std Dev:\nMean = {pop_mean:.2f}, Std Dev = {pop_std:.2f}")
 
-    # Normalized data plot with histogram + standard normal curve
-    st.subheader("📈 Standard Normalized Distribution")
+    # Normalized data plot
+    st.subheader("Standard Normalized Distribution")
     fig2, ax2 = plt.subplots(figsize=(6, 4))
     ax2.hist(norm_data, bins='auto', color='lightgreen', edgecolor='black', density=True)
     x_norm = np.linspace(min(norm_data), max(norm_data), 300)
