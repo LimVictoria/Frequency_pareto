@@ -120,7 +120,7 @@ if data:
         ax_clt.legend(loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
-        st.warning("⚠️ CLT not recommended (sample size < 30).")
+        st.warning("CLT not recommended (sample size < 30).")
 
     st.markdown("#### Z-score")
     norm_data = []
@@ -155,8 +155,8 @@ if data:
         if show_hist:
             ax2.hist(norm_data, bins=num_bins, alpha=0.2, color='gray', density=True, label='Histogram')
 
-        ax2.set_xlabel("z-score")
-        ax2.set_ylabel("Density")
+        ax2.set_xlabel("Z-score")
+        ax2.set_ylabel("Frequency")
         ax2.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
         ax2.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
         ax2.legend(loc='upper right', fontsize='small')
@@ -165,7 +165,7 @@ if data:
         # --- Downloadable CSV of Normalized Data ---
         df_norm = pd.DataFrame({"Original": data, "Normalized": norm_data})
         csv = df_norm.to_csv(index=False).encode()
-        st.download_button("📥 Download Normalized Data as CSV", csv, "normalized_data.csv", "text/csv")
+        st.download_button("⬇️ Download Z-scores as CSV", csv, "Z-scores.csv", "text/csv")
 
 else:
     st.info("Please upload or enter data using the sidebar.")
