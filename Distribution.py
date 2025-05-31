@@ -73,7 +73,7 @@ if data:
     std = np.std(data, ddof=1) if n > 1 else 0
     sem = std / np.sqrt(n) if n > 0 else 0
 
-    st.subheader("Sample Distribution - Gaussian KDE applied")
+    st.subheader("Population Distribution - Gaussian Kernel Density Estimation (KDE) applied")
     fig, ax = plt.subplots(figsize=(6, 4))
     try:
         density = gaussian_kde(data)
@@ -102,7 +102,7 @@ if data:
     st.write("")  
     st.write("") 
     st.write("") 
-    st.subheader("Normal Distribution - CLT Approximation applied")
+    st.subheader("Sampling Distribution - CLT Approximation applied")
     if n >= 30:
         sample_std = std / np.sqrt(n)
         x_clt = np.linspace(mean - 4 * sample_std, mean + 4 * sample_std, 300)
@@ -120,7 +120,7 @@ if data:
         ax_clt.legend(loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
-        st.warning("CLT not recommended (sample size < 30).")
+        st.warning("CLT not recommended (sample size < 30), because when n < 30, it will not be a normal distribution.")
 
     st.markdown("#### Z-score")
     norm_data = []
@@ -146,12 +146,12 @@ if data:
         try:
             density_norm = gaussian_kde(norm_data)
             x_norm = np.linspace(-4, 4, 300)
-            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='Sample dist.')
+            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='Std Population dist.')
         except Exception:
             ax2.hist(norm_data, bins=num_bins, color='red', alpha=0.5, density=True)
 
         y_norm = norm.pdf(x_norm, 0, 1)
-        ax2.plot(x_norm, y_norm, 'green', linestyle='--', lw=2, label='Normal dist.')
+        ax2.plot(x_norm, y_norm, 'green', linestyle='--', lw=2, label='Std Normal dist.')
         if show_hist:
             ax2.hist(norm_data, bins=num_bins, alpha=0.2, color='gray', density=True, label='Histogram')
 
