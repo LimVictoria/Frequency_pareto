@@ -48,7 +48,7 @@ with st.sidebar:
 
     # Normalization options
     st.markdown("---")
-    st.header("⚙️ Normalization Settings")
+    st.header("Normalization Settings")
     transformation = st.selectbox("Normalization method:", 
                                   ["Sample to Standard Normal", "Population to Standard Normal"])
 
@@ -64,7 +64,7 @@ with st.sidebar:
         num_bins = 30  # Default fallback when histogram is hidden
 
 # --- Main Panel ---
-st.title("📊 Normalization Visualizer")
+st.title("Distribution")
 
 if data:
     # --- Compute Basic Stats ---
@@ -73,20 +73,19 @@ if data:
     std = np.std(data, ddof=1) if n > 1 else 0
     sem = std / np.sqrt(n) if n > 0 else 0
 
-    st.subheader("1️⃣ Original Data Distribution")
+    st.subheader("Sample Distribution - Gaussian KDE applied")
     fig, ax = plt.subplots(figsize=(6, 4))
     try:
         density = gaussian_kde(data)
         x_vals = np.linspace(min(data), max(data), 300)
         ax.plot(x_vals, density(x_vals), color='skyblue', lw=2, label='KDE')
-        ax.fill_between(x_vals, 0, density(x_vals), color='skyblue', alpha=0.4)
+        ax.fill_between(x_vals, 0, density(x_vals), color='blue', alpha=0.4)
     except Exception:
-        ax.hist(data, bins=num_bins, color='skyblue', alpha=0.5, density=True)
+        ax.hist(data, bins=num_bins, color='blue', alpha=0.5, density=True)
     if show_hist:
         ax.hist(data, bins=num_bins, color='gray', alpha=0.2, density=True, label='Histogram')
-    ax.set_title("Original Data KDE")
-    ax.set_xlabel("Value")
-    ax.set_ylabel("Density")
+    ax.set_xlabel("Interval")
+    ax.set_ylabel("Frequency")
     ax.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     ax.legend()
