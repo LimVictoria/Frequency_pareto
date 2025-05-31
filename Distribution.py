@@ -94,9 +94,9 @@ if data:
     st.markdown("#### Statistics")
     st.markdown(f"""
     - **Count (n)**: {n}  
-    - **Sample Mean (𝑥̄)**: {mean:.1f}  
-    - **Sample Standard Deviation (s)**: {std:.1f}  
-    - **Standard Error of Mean (SEM)**: {sem:.1f}
+    - **Sample Mean (𝑥̄)                     = Population Mean (μ)**                 : {mean:.1f}  
+    - **Population Standard Deviation (σ)**                                         : {std:.1f}
+    - **Sample Standard Deviation (s)       = σ/√n = Standard Error of Mean (SEM)** : {sem:.1f}
     """)
     
     st.write("")  
