@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm, gaussian_kde
 from io import BytesIO
+import matplotlib.ticker as ticker
 
 # --- Helper: Excel column name from index ---
 def get_excel_column_name(n: int) -> str:
@@ -57,6 +58,11 @@ with st.sidebar:
 
     show_hist = st.checkbox("Show Histogram Overlay", value=True)
 
+    if show_hist:
+        num_bins = st.slider("Number of bins for histogram:", min_value=5, max_value=100, value=30)
+    else:
+        num_bins = 30  # Default fallback when histogram is hidden
+
 # --- Main Panel ---
 st.title("📊 Normalization Visualizer")
 
@@ -75,12 +81,14 @@ if data:
         ax.plot(x_vals, density(x_vals), color='skyblue', lw=2, label='KDE')
         ax.fill_between(x_vals, 0, density(x_vals), color='skyblue', alpha=0.4)
     except Exception:
-        ax.hist(data, bins='auto', color='skyblue', alpha=0.5, density=True)
+        ax.hist(data, bins=num_bins, color='skyblue', alpha=0.5, density=True)
     if show_hist:
-        ax.hist(data, bins='auto', color='gray', alpha=0.2, density=True, label='Histogram')
+        ax.hist(data, bins=num_bins, color='gray', alpha=0.2, density=True, label='Histogram')
     ax.set_title("Original Data KDE")
     ax.set_xlabel("Value")
     ax.set_ylabel("Density")
+    ax.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     ax.legend()
     st.pyplot(fig)
 
@@ -108,6 +116,8 @@ if data:
         ax_clt.set_title(f"CLT Approximation (n={n})")
         ax_clt.set_xlabel("Sample Mean")
         ax_clt.set_ylabel("Density")
+        ax_clt.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+        ax_clt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
         ax_clt.legend(loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
@@ -123,8 +133,7 @@ if data:
             norm_data = [(x - mean) / std for x in data]
             st.success("Normalized using sample mean and sample std deviation.")
             st.markdown(f"**Formula:** z = (x - 𝑥̄) / s")
-
-    else:  # Population normalization
+    else:
         if pop_std == 0:
             st.error("❌ Population std deviation cannot be zero.")
         else:
@@ -141,16 +150,18 @@ if data:
             x_norm = np.linspace(-4, 4, 300)
             ax2.plot(x_norm, density_norm(x_norm), color='lightgreen', lw=2, label='KDE of Normalized Data')
         except Exception:
-            ax2.hist(norm_data, bins='auto', color='lightgreen', alpha=0.5, density=True)
-        
+            ax2.hist(norm_data, bins=num_bins, color='lightgreen', alpha=0.5, density=True)
+
         y_norm = norm.pdf(x_norm, 0, 1)
         ax2.plot(x_norm, y_norm, 'purple', linestyle='--', lw=2, label='Standard Normal PDF')
         if show_hist:
-            ax2.hist(norm_data, bins='auto', alpha=0.2, color='gray', density=True, label='Histogram')
+            ax2.hist(norm_data, bins=num_bins, alpha=0.2, color='gray', density=True, label='Histogram')
 
         ax2.set_title("Normalized Data vs Standard Normal")
         ax2.set_xlabel("z-score")
         ax2.set_ylabel("Density")
+        ax2.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+        ax2.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
         ax2.legend()
         st.pyplot(fig2)
 
