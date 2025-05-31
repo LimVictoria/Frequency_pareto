@@ -83,7 +83,7 @@ if data:
         ax.hist(data, bins=num_bins, color='red', alpha=0.5, density=True)
     if show_hist:
         ax.hist(data, bins=num_bins, color='gray', alpha=0.2, density=True, label='Histogram')
-    ax.set_xlabel("Interval")
+    ax.set_xlabel("Data points")
     ax.set_ylabel("Frequency")
     ax.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
@@ -113,9 +113,8 @@ if data:
         ax_clt.axvline(mean, color='blue', linestyle='--', label=f'Mean = {mean:.1f}')
         ax_clt.axvline(mean - sample_std, color='green', linestyle='--', label=f'Mean - Std err mean = {mean - sample_std:.1f}')
         ax_clt.axvline(mean + sample_std, color='green', linestyle='--', label=f'Mean + Std err mean = {mean + sample_std:.1f}')
-        ax_clt.set_title(f"CLT Approximation (n={n})")
-        ax_clt.set_xlabel("Sample Mean")
-        ax_clt.set_ylabel("Density")
+        ax_clt.set_xlabel("Data points")
+        ax_clt.set_ylabel("Frequency")
         ax_clt.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
         ax_clt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
         ax_clt.legend(loc='upper right', fontsize='small')
@@ -123,46 +122,44 @@ if data:
     else:
         st.warning("⚠️ CLT not recommended (sample size < 30).")
 
-    # --- Normalization Logic ---
-    st.subheader("Normalized Data")
+    st.markdown("#### Z-score")
     norm_data = []
     if transformation == "Sample to Standard Normal":
         if std == 0:
             st.error("❌ Sample standard deviation is 0, normalization not possible.")
         else:
             norm_data = [(x - mean) / std for x in data]
-            st.success("Normalized using sample mean and sample std deviation.")
             st.markdown(f"**Formula:** z = (x - 𝑥̄) / s")
     else:
         if pop_std == 0:
             st.error("❌ Population std deviation cannot be zero.")
         else:
             norm_data = [(x - pop_mean) / pop_std for x in data]
-            st.success("Normalized using population mean and population std deviation.")
             st.markdown(f"**Formula:** z = (x - μ) / σ")
 
-    # --- Plot Normalized Data ---
+    st.write("")
+    st.write("")
+    st.write("")
     if norm_data:
-        st.subheader("Normalized Data Distribution")
+        st.subheader("Standard Normal Distribution , Z ~ N(0, 1)")
         fig2, ax2 = plt.subplots(figsize=(6, 4))
         try:
             density_norm = gaussian_kde(norm_data)
             x_norm = np.linspace(-4, 4, 300)
-            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='KDE of Normalized Data')
+            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='Sample dist.')
         except Exception:
             ax2.hist(norm_data, bins=num_bins, color='red', alpha=0.5, density=True)
 
         y_norm = norm.pdf(x_norm, 0, 1)
-        ax2.plot(x_norm, y_norm, 'green', linestyle='--', lw=2, label='Standard Normal PDF')
+        ax2.plot(x_norm, y_norm, 'green', linestyle='--', lw=2, label='Normal dist.')
         if show_hist:
             ax2.hist(norm_data, bins=num_bins, alpha=0.2, color='gray', density=True, label='Histogram')
 
-        ax2.set_title("Normalized Data vs Standard Normal")
         ax2.set_xlabel("z-score")
         ax2.set_ylabel("Density")
         ax2.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
         ax2.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-        ax2.legend()
+        ax2.legend(loc='upper right', fontsize='small')
         st.pyplot(fig2)
 
         # --- Downloadable CSV of Normalized Data ---
