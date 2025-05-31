@@ -16,7 +16,7 @@ def get_excel_column_name(n: int) -> str:
 
 # --- Sidebar: Upload/Input & Settings ---
 with st.sidebar:
-    st.header("📥 Input Data")
+    st.header("Input Data")
     input_method = st.radio("Provide data via:", ["Upload Excel file", "Enter manually"])
 
     data = []
@@ -59,7 +59,7 @@ with st.sidebar:
     show_hist = st.checkbox("Show Histogram Overlay", value=True)
 
     if show_hist:
-        num_bins = st.slider("Number of bins for histogram:", min_value=5, max_value=100, value=30)
+        num_bins = st.slider("Number of intervals for histogram:", min_value=5, max_value=100, value=30)
     else:
         num_bins = 30  # Default fallback when histogram is hidden
 
@@ -77,11 +77,10 @@ if data:
     fig, ax = plt.subplots(figsize=(6, 4))
     try:
         density = gaussian_kde(data)
-        x_vals = np.linspace(min(data), max(data), 300)
-        ax.plot(x_vals, density(x_vals), color='skyblue', lw=2, label='KDE')
-        ax.fill_between(x_vals, 0, density(x_vals), color='blue', alpha=0.4)
+        x_vals = np.linspace(min(data), max(data), 500)
+        ax.plot(x_vals, density(x_vals), color='red', lw=2, label='Sample dist.')
     except Exception:
-        ax.hist(data, bins=num_bins, color='blue', alpha=0.5, density=True)
+        ax.hist(data, bins=num_bins, color='red', alpha=0.5, density=True)
     if show_hist:
         ax.hist(data, bins=num_bins, color='gray', alpha=0.2, density=True, label='Histogram')
     ax.set_xlabel("Interval")
@@ -92,16 +91,18 @@ if data:
     st.pyplot(fig)
 
     # --- Show Stats ---
-    st.markdown("#### 📌 Summary Statistics")
+    st.markdown("#### Statistics")
     st.markdown(f"""
     - **Count (n)**: {n}  
     - **Sample Mean (𝑥̄)**: {mean:.1f}  
     - **Sample Standard Deviation (s)**: {std:.1f}  
     - **Standard Error of Mean (SEM)**: {sem:.1f}
     """)
-
-    # --- Central Limit Theorem Plot ---
-    st.subheader("2️⃣ Central Limit Theorem Approximation")
+    
+    st.write("")  
+    st.write("") 
+    st.write("") 
+    st.subheader("Normal Distribution - CLT Approximation applied")
     if n >= 30:
         sample_std = std / np.sqrt(n)
         x_clt = np.linspace(mean - 4 * sample_std, mean + 4 * sample_std, 300)
@@ -147,12 +148,12 @@ if data:
         try:
             density_norm = gaussian_kde(norm_data)
             x_norm = np.linspace(-4, 4, 300)
-            ax2.plot(x_norm, density_norm(x_norm), color='lightgreen', lw=2, label='KDE of Normalized Data')
+            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='KDE of Normalized Data')
         except Exception:
-            ax2.hist(norm_data, bins=num_bins, color='lightgreen', alpha=0.5, density=True)
+            ax2.hist(norm_data, bins=num_bins, color='red', alpha=0.5, density=True)
 
         y_norm = norm.pdf(x_norm, 0, 1)
-        ax2.plot(x_norm, y_norm, 'purple', linestyle='--', lw=2, label='Standard Normal PDF')
+        ax2.plot(x_norm, y_norm, 'green', linestyle='--', lw=2, label='Standard Normal PDF')
         if show_hist:
             ax2.hist(norm_data, bins=num_bins, alpha=0.2, color='gray', density=True, label='Histogram')
 
