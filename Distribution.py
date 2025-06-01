@@ -18,7 +18,6 @@ def get_excel_column_name(n: int) -> str:
 with st.sidebar:
     st.header("Input Data")
     input_method = st.radio("Provide data via:", ["Upload Excel file", "Enter manually"])
-
     data = []
 
     if input_method == "Upload Excel file":
@@ -46,7 +45,6 @@ with st.sidebar:
             except ValueError:
                 st.error("❌ Invalid input. Ensure values are comma-separated numbers.")
 
-    # Normalization options
     st.markdown("---")
     st.header("Normalization Settings")
     transformation = st.selectbox("Normalization method:", 
@@ -57,17 +55,18 @@ with st.sidebar:
         pop_std = st.number_input("Population Standard Deviation (σ):", value=1.0, min_value=1e-6)
 
     show_hist = st.checkbox("Show Histogram Overlay", value=True)
+    num_bins = st.slider("Number of intervals for histogram:", min_value=5, max_value=100, value=30) if show_hist else 30
 
-    if show_hist:
-        num_bins = st.slider("Number of intervals for histogram:", min_value=5, max_value=100, value=30)
-    else:
-        num_bins = 30  # Default fallback when histogram is hidden
+    st.markdown("---")
+    st.header("Confidence Interval Settings")
+    confidence_level = st.selectbox("Select Confidence Level:", [80, 85, 90, 95, 99], index=3)
+    alpha = 1 - confidence_level / 100
+    z_alpha_over_2 = norm.ppf(1 - alpha / 2)
 
 # --- Main Panel ---
 st.title("Distribution")
 
 if data:
-    # --- Compute Basic Stats ---
     n = len(data)
     mean = np.mean(data)
     std = np.std(data, ddof=1) if n > 1 else 0
@@ -86,37 +85,58 @@ if data:
     ax.set_xlabel("Data points")
     ax.set_ylabel("Frequency")
     ax.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-    ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.legend()
     st.pyplot(fig)
 
-    # --- Show Stats ---
     st.markdown("#### Statistics")
     st.markdown(f"""
-    - **Count (n)**: {n}  
-    - **Sample Mean (𝑥̄)                     = Population Mean (μ)**                 : {mean:.1f}  
-    - **Population Standard Deviation (σ)**                                         : {std:.1f}
-    - **Sample Standard Deviation (s)       = σ/√n = Standard Error of Mean (SEM)** : {sem:.1f}
+    - **Count (n)** : {n}  
+    - **Sample Mean (𝑥̄) = Population Mean (μ)** : {mean:.1f}  
+    - **Population Standard Deviation (σ)** : {std:.1f}  
+    - **Sample Standard Deviation (s) = Standard Error of Mean (SEM)** : {sem:.1f}
     """)
-    
-    st.write("")  
-    st.write("") 
-    st.write("") 
+
+    st.markdown("#### Confidence Level")
+    st.markdown(f"""
+    - **Confidence Level** : {confidence_level}%  
+    - **Alpha** ($\\alpha$): {alpha:.2f}  
+    - **Z-score** ($z_{{\\alpha/2}}$) : {z_alpha_over_2:.3f}  
+    """)
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
+
     st.subheader("Sampling Distribution - CLT Approximation applied")
     if n >= 30:
         sample_std = std / np.sqrt(n)
         x_clt = np.linspace(mean - 4 * sample_std, mean + 4 * sample_std, 300)
         y_clt = norm.pdf(x_clt, mean, sample_std)
 
+        critical_left = mean - z_alpha_over_2 * sample_std
+        critical_right = mean + z_alpha_over_2 * sample_std
+
         fig_clt, ax_clt = plt.subplots(figsize=(6, 4))
         ax_clt.plot(x_clt, y_clt, 'r-', label='CLT Normal Curve')
+
+        ax_clt.fill_between(x_clt, y_clt, where=(x_clt <= critical_left), color='orange', alpha=0.4,
+                            label=f'Left α/2 = {alpha/2:.2f}')
+        ax_clt.fill_between(x_clt, y_clt, where=(x_clt >= critical_right), color='orange', alpha=0.4,
+                            label=f'Right α/2 = {alpha/2:.2f}')
+
         ax_clt.axvline(mean, color='blue', linestyle='--', label=f'Mean = {mean:.1f}')
-        ax_clt.axvline(mean - sample_std, color='green', linestyle='--', label=f'Mean - Std err mean = {mean - sample_std:.1f}')
-        ax_clt.axvline(mean + sample_std, color='green', linestyle='--', label=f'Mean + Std err mean = {mean + sample_std:.1f}')
-        ax_clt.set_xlabel("Data points")
-        ax_clt.set_ylabel("Frequency")
+        ax_clt.axvline(critical_left, color='purple', linestyle='--', label=f'Critical Left = {critical_left:.1f}')
+        ax_clt.axvline(critical_right, color='purple', linestyle='--', label=f'Critical Right = {critical_right:.1f}')
+
+        ax_clt.annotate("α/2", xy=(critical_left, 0), xytext=(critical_left - sample_std, max(y_clt)*0.1),
+                        arrowprops=dict(arrowstyle='->'), fontsize=8)
+        ax_clt.annotate("α/2", xy=(critical_right, 0), xytext=(critical_right + sample_std*0.5, max(y_clt)*0.1),
+                        arrowprops=dict(arrowstyle='->'), fontsize=8)
+
+        ax_clt.set_xlabel("Sample Means")
+        ax_clt.set_ylabel("Probability Density")
         ax_clt.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-        ax_clt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+        ax_clt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
         ax_clt.legend(loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
@@ -137,9 +157,6 @@ if data:
             norm_data = [(x - pop_mean) / pop_std for x in data]
             st.markdown(f"**Formula:** z = (x - μ) / σ")
 
-    st.write("")
-    st.write("")
-    st.write("")
     if norm_data:
         st.subheader("Standard Normal Distribution , Z ~ N(0, 1)")
         fig2, ax2 = plt.subplots(figsize=(6, 4))
@@ -158,11 +175,10 @@ if data:
         ax2.set_xlabel("Z-score")
         ax2.set_ylabel("Frequency")
         ax2.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-        ax2.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+        ax2.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
         ax2.legend(loc='upper right', fontsize='small')
         st.pyplot(fig2)
 
-        # --- Downloadable CSV of Normalized Data ---
         df_norm = pd.DataFrame({"Original": data, "Normalized": norm_data})
         csv = df_norm.to_csv(index=False).encode()
         st.download_button("⬇️ Download Z-scores as CSV", csv, "Z-scores.csv", "text/csv")
