@@ -141,7 +141,7 @@ if data:
         ax_clt.legend(loc='upper right', fontsize='small')
         st.pyplot(fig_clt)
     else:
-        st.warning("CLT not recommended (sample size < 30), because when n < 30, it will not be a normal distribution.")
+        st.warning("CLT not recommended (sample size < 30), because when n < 30.")
 
     st.markdown("#### Z-score")
     norm_data = []
