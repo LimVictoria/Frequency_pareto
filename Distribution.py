@@ -46,14 +46,7 @@ with st.sidebar:
                 st.error("❌ Invalid input. Ensure values are comma-separated numbers.")
 
     st.markdown("---")
-    st.header("Normalization Settings")
-    transformation = st.selectbox("Normalization method:", 
-                                  ["Sample to Standard Normal", "Population to Standard Normal"])
-
-    if transformation == "Population to Standard Normal":
-        pop_mean = st.number_input("Population Mean (μ):", value=0.0)
-        pop_std = st.number_input("Population Standard Deviation (σ):", value=1.0, min_value=1e-6)
-
+    st.header("Visualization Settings")
     show_hist = st.checkbox("Show Histogram Overlay", value=True)
     num_bins = st.slider("Number of intervals for histogram:", min_value=5, max_value=100, value=30) if show_hist else 30
 
@@ -92,9 +85,9 @@ if data:
     st.markdown("#### Statistics")
     st.markdown(f"""
     - **Count (n)** : {n}  
-    - **Sample Mean (𝑥̄) = Population Mean (μ)** : {mean:.1f}  
-    - **Population Standard Deviation (σ)** : {std:.1f}  
-    - **Sample Standard Deviation (s) = Standard Error of Mean (SEM) = σ/√n** : {sem:.1f}
+    - **Sample Mean (𝑥̄)** : {mean:.1f}  
+    - **Sample Standard Deviation (s)** : {std:.1f}  
+    - **Standard Error of Mean (SEM = s / √n)** : {sem:.1f}
     """)
 
     st.markdown("#### Confidence Level")
@@ -103,19 +96,18 @@ if data:
     - **Alpha** ($\\alpha$): {alpha:.2f}  
     - **Z-score ($z_{{\\alpha/2}}$)** : {z_alpha_over_2:.3f}  
     """)
-    # --- Confidence Interval Calculation ---
+    
     if n > 1:
         ci_lower = mean - z_alpha_over_2 * sem
         ci_upper = mean + z_alpha_over_2 * sem
         st.markdown("#### Confidence Interval")
         st.markdown(f"""
-        - **Confidence Interval ({confidence_level}%) = 𝑥̄ ± $z_{{\\alpha/2}}$ · σ/√n** : ({ci_lower:.1f}, {ci_upper:.1f})
+        - **Confidence Interval ({confidence_level}%) = 𝑥̄ ± $z_{{\\alpha/2}}$ · s/√n** : ({ci_lower:.1f}, {ci_upper:.1f})
         """)
-
+        
     st.markdown("")
     st.markdown("")
     st.markdown("")
-
     st.subheader("Sampling Distribution - CLT Approximation applied")
     if n >= 30:
         sample_std = std / np.sqrt(n)
@@ -153,26 +145,21 @@ if data:
 
     st.markdown("#### Z-score")
     norm_data = []
-    if transformation == "Sample to Standard Normal":
-        if std == 0:
-            st.error("❌ Sample standard deviation is 0, normalization not possible.")
-        else:
-            norm_data = [(x - mean) / std for x in data]
-            st.markdown(f"**Formula:** z = (x - 𝑥̄) / s")
+    if std == 0:
+        st.error("❌ Sample standard deviation is 0, normalization not possible.")
     else:
-        if pop_std == 0:
-            st.error("❌ Population std deviation cannot be zero.")
-        else:
-            norm_data = [(x - pop_mean) / pop_std for x in data]
-            st.markdown(f"**Formula:** z = (x - μ) / σ")
-
+        norm_data = [(x - mean) / std for x in data]
+        st.markdown(f"**Formula:** z = (x - 𝑥̄) / s")
+    st.markdown("")
+    st.markdown("")
+    st.markdown("")
     if norm_data:
         st.subheader("Standard Normal Distribution , Z ~ N(0, 1)")
         fig2, ax2 = plt.subplots(figsize=(6, 4))
         try:
             density_norm = gaussian_kde(norm_data)
             x_norm = np.linspace(-4, 4, 300)
-            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='Std Population dist.')
+            ax2.plot(x_norm, density_norm(x_norm), color='red', lw=2, label='Standardized Sample dist.')
         except Exception:
             ax2.hist(norm_data, bins=num_bins, color='red', alpha=0.5, density=True)
 
@@ -188,7 +175,7 @@ if data:
         ax2.legend(loc='upper right', fontsize='small')
         st.pyplot(fig2)
 
-        df_norm = pd.DataFrame({"Original": data, "Normalized": norm_data})
+        df_norm = pd.DataFrame({"Original": data, "Z-score": norm_data})
         csv = df_norm.to_csv(index=False).encode()
         st.download_button("⬇️ Download Z-scores as CSV", csv, "Z-scores.csv", "text/csv")
 
