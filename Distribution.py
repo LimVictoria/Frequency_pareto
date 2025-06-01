@@ -94,15 +94,24 @@ if data:
     - **Count (n)** : {n}  
     - **Sample Mean (𝑥̄) = Population Mean (μ)** : {mean:.1f}  
     - **Population Standard Deviation (σ)** : {std:.1f}  
-    - **Sample Standard Deviation (s) = Standard Error of Mean (SEM)** : {sem:.1f}
+    - **Sample Standard Deviation (s) = Standard Error of Mean (SEM) = σ/√n** : {sem:.1f}
     """)
 
     st.markdown("#### Confidence Level")
     st.markdown(f"""
     - **Confidence Level** : {confidence_level}%  
     - **Alpha** ($\\alpha$): {alpha:.2f}  
-    - **Z-score** ($z_{{\\alpha/2}}$) : {z_alpha_over_2:.3f}  
+    - **Z-score ($z_{{\\alpha/2}}$)** : {z_alpha_over_2:.3f}  
     """)
+    # --- Confidence Interval Calculation ---
+    if n > 1:
+        ci_lower = mean - z_alpha_over_2 * sem
+        ci_upper = mean + z_alpha_over_2 * sem
+        st.markdown("#### Confidence Interval")
+        st.markdown(f"""
+        - **Confidence Interval ({confidence_level}%) = 𝑥̄ ± $z_{{\\alpha/2}}$ · σ/√n** : ({ci_lower:.1f}, {ci_upper:.1f})
+        """)
+
     st.markdown("")
     st.markdown("")
     st.markdown("")
